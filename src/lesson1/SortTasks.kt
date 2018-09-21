@@ -2,6 +2,9 @@
 
 package lesson1
 
+import java.io.*
+import java.util.*
+
 /**
  * Сортировка времён
  *
@@ -31,7 +34,16 @@ package lesson1
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortTimes(inputName: String, outputName: String) {
-    TODO()
+    val inp = BufferedReader(FileReader(File(inputName))).readLines()
+    val split = inp.map { it.split(":") }
+    split.forEach {
+        if (it.size != 3 || Integer.parseInt(it.component1()) !in 0..23
+                || Integer.parseInt(it.component2()) !in 0..59
+                || Integer.parseInt(it.component3()) !in 0..59) throw NumberFormatException()
+    }
+    val writer = BufferedWriter(OutputStreamWriter(FileOutputStream(outputName)))
+    writer.write(inp.sorted().joinToString(separator = "\n"))
+    writer.close()
 }
 
 /**
@@ -61,7 +73,21 @@ fun sortTimes(inputName: String, outputName: String) {
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun sortAddresses(inputName: String, outputName: String) {
-    TODO()
+    val input = BufferedReader(FileReader(File(inputName))).readLines()
+    input.forEach {
+        if (!Regex(""".+ - .+""").matches(it)) throw Exception()
+    }
+    val lines = input.map { it.split(" - ") }
+    val res = TreeMap<String, MutableList<String>>()
+    for (l in lines) {
+        if (res.containsKey(l.last())) res[l.last()]!!.add(l.first())
+        else res[l.last()] = mutableListOf(l.first())
+    }
+    val writer = BufferedWriter(OutputStreamWriter(FileOutputStream(outputName)))
+    for (en in res) {
+        writer.write("${en.key} - ${en.value.joinToString(separator = ", ")}\n")
+    }
+    writer.close()
 }
 
 /**
@@ -95,7 +121,12 @@ fun sortAddresses(inputName: String, outputName: String) {
  * 121.3
  */
 fun sortTemperatures(inputName: String, outputName: String) {
-    TODO()
+    val input = BufferedReader(FileReader(File(inputName))).readLines()
+    val writer = BufferedWriter(OutputStreamWriter(FileOutputStream(outputName)))
+    for (el in input.map { it.toDouble() }.sorted()) {
+        writer.write("$el\n")
+    }
+    writer.close()
 }
 
 /**
@@ -128,7 +159,20 @@ fun sortTemperatures(inputName: String, outputName: String) {
  * 2
  */
 fun sortSequence(inputName: String, outputName: String) {
-    TODO()
+    val input = BufferedReader(FileReader(File(inputName))).readLines()
+    val numberList = input.map { Integer.parseInt(it) }.toMutableList()
+    val countable = numberList.groupingBy { it }.eachCount()
+    val max = countable.maxBy { it.value }
+    val maxCountable =
+            if (countable.filter { it.value == max!!.value }.size != 1)
+                countable.minBy { it.key }!!.key
+            else max!!.key
+    numberList.removeIf { it == maxCountable }
+    for (i in 0 until max!!.value)
+        numberList.add(maxCountable)
+    val writer = BufferedWriter(OutputStreamWriter(FileOutputStream(outputName)))
+    numberList.forEach { writer.write("$it\n") }
+    writer.close()
 }
 
 /**
@@ -146,6 +190,8 @@ fun sortSequence(inputName: String, outputName: String) {
  * Результат: second = [1 3 4 9 9 13 15 20 23 28]
  */
 fun <T : Comparable<T>> mergeArrays(first: Array<T>, second: Array<T?>) {
-    TODO()
+    val res = first + second.slice(first.size until second.size).map { it as T }
+    res.sort()
+    second.forEachIndexed { index, t -> second[index] = res[index] }
 }
 
