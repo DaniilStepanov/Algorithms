@@ -4,6 +4,7 @@ package lesson1
 
 import java.io.*
 import java.util.*
+import javax.print.attribute.IntegerSyntax
 
 /**
  * Сортировка времён
@@ -123,8 +124,17 @@ fun sortAddresses(inputName: String, outputName: String) {
 fun sortTemperatures(inputName: String, outputName: String) {
     val input = BufferedReader(FileReader(File(inputName))).readLines()
     val writer = BufferedWriter(OutputStreamWriter(FileOutputStream(outputName)))
-    for (el in input.map { it.toDouble() }.sorted()) {
-        writer.write("$el\n")
+    val set = TreeMap<Double, Int>()
+    for (i in input) {
+        val d = i.toDouble()
+        if (set.containsKey(i.toDouble()))
+            set[d] = set[d]!! + 1
+        else
+            set[d] = 0
+    }
+    for ((k, v) in set) {
+        for (i in 0 until v + 1)
+            writer.write("$k\n")
     }
     writer.close()
 }

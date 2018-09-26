@@ -2,6 +2,10 @@
 
 package lesson2
 
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileReader
+
 /**
  * Получение наибольшей прибыли (она же -- поиск максимального подмассива)
  * Простая
@@ -27,7 +31,26 @@ package lesson2
  * В случае обнаружения неверного формата файла бросить любое исключение.
  */
 fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
-    TODO()
+    val input: List<Int>
+    try {
+        input = BufferedReader(FileReader(File(inputName))).readLines().map { it.toInt() }
+    }
+    catch (e: Exception) {
+        throw e
+    }
+    if (input.size < 2)
+        throw Exception()
+    var res = Pair(1, 2)
+    var maxDif = input[1] - input[0]
+    for (i in 0 until input.size) {
+        for (j in i until input.size) {
+            if (input[j] - input[i] > maxDif) {
+                res = Pair(i + 1, j + 1)
+                maxDif = input[j] - input[i]
+            }
+        }
+    }
+    return res
 }
 
 /**
@@ -77,7 +100,11 @@ fun optimizeBuyAndSell(inputName: String): Pair<Int, Int> {
  * Х х Х
  */
 fun josephTask(menNumber: Int, choiceInterval: Int): Int {
-    TODO()
+    var res = 0
+    for (i in 1..menNumber) {
+        res = (res + choiceInterval) % i
+    }
+    return res + 1
 }
 
 /**
@@ -91,8 +118,30 @@ fun josephTask(menNumber: Int, choiceInterval: Int): Int {
  * Если имеется несколько самых длинных общих подстрок одной длины,
  * вернуть ту из них, которая встречается раньше в строке first.
  */
-fun longestCommonSubstring(first: String, second: String): String {
-    TODO()
+fun longestCommonSubstring(second: String, first: String): String {
+    val a = ArrayList<ArrayList<Int>>()
+    val list = generateSequence(0) { it }.take(second.length + 1).toList()
+    a.add(ArrayList(list))
+    for (i in 0..first.length)
+        a.add(ArrayList(list))
+    for (i in 0 until first.length) {
+        for (j in 0 until second.length) {
+            if (first[i] == second[j]) {
+                a[i + 1][j + 1] = a[i][j] + 1
+            }
+        }
+    }
+    val maxEl = a.maxBy { it.max()!! }!!.max()!!
+    var ans = ""
+    if (maxEl == 0) return ans
+    for (i in 0 until first.length) {
+        for (j in 0 until second.length) {
+            if (a[i][j] == maxEl) {
+                ans = second.substring(j - maxEl, j)
+            }
+        }
+    }
+    return ans
 }
 
 /**
@@ -106,7 +155,20 @@ fun longestCommonSubstring(first: String, second: String): String {
  * Единица простым числом не считается.
  */
 fun calcPrimesNumber(limit: Int): Int {
-    TODO()
+    if (limit <= 1) return 0
+    val list = generateSequence(true) { it }.take(limit + 1).toMutableList()
+    list[0] = false
+    list[1] = false
+    for (i in 2 until list.size) {
+        if (list[i]) {
+            var j = 2
+            while (i * j < list.size) {
+                list[i * j] = false
+                ++j
+            }
+        }
+    }
+    return list.count { it }
 }
 
 /**
@@ -135,6 +197,66 @@ fun calcPrimesNumber(limit: Int): Int {
  * В файле буквы разделены пробелами, строки -- переносами строк.
  * Остальные символы ни в файле, ни в словах не допускаются.
  */
+data class Letter(val sym: Char, var coorX: Int = 0, var coorY: Int = 0,
+                  val nextLetters: MutableList<Letter> = mutableListOf()) {
+    override fun toString(): String {
+        return "$sym ${nextLetters.size} ($coorX, $coorY)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        other?.let {
+            val otherLetter = other as Letter
+            return this.coorX == otherLetter.coorX && this.coorY == otherLetter.coorY
+        }
+        return false
+
+    }
+}
+
 fun baldaSearcher(inputName: String, words: Set<String>): Set<String> {
-    TODO()
+    val input = BufferedReader(FileReader(File(inputName)))
+            .readLines()
+            .map { it.split(' ') }
+            .map { it.map { Letter(it.first()) } }
+    val directions = listOf(Pair(-1, 0), Pair(0, -1), Pair(1, 0), Pair(0, 1))
+    for (i in 0 until input.size) {
+        val curInp = input[i]
+        for (j in 0 until curInp.size) {
+            val letter = input[i][j]
+            letter.coorX = i
+            letter.coorY = j
+            for (d in directions) {
+                val newX = i + d.first
+                val newY = j + d.second
+                if (newX >= 0 && newX < input.size) {
+                    if (newY >= 0 && newY < input[0].size) {
+                        letter.nextLetters.add(input[newX][newY])
+                    }
+                }
+            }
+        }
+    }
+    val splitInput = input.flatten()
+    val wordsToChar = words.map { it.toList() }
+    val res = mutableSetOf<String>()
+    for (i in 0 until wordsToChar.size) {
+        val word = wordsToChar[i]
+        var curLetters = splitInput.filter { it.sym == word.first() }
+        if (curLetters.isEmpty()) continue
+        val used = mutableListOf<Letter>()
+        curLetters.forEach { used.add(it) }
+        for (j in 1 until word.size) {
+            val filtered = curLetters.filter { it.nextLetters.map { it.sym }.contains(word[j]) }
+            val deletedLetters = curLetters.filterNot { it.nextLetters.map { it.sym }.contains(word[j]) }
+            deletedLetters.forEach { used.remove(it) }
+            curLetters = filtered.map { it.nextLetters }.flatten().filter { it.sym == word[j] }
+            curLetters = curLetters.filterNot { used.contains(it) }
+            curLetters.forEach { used.add(it) }
+            if (curLetters.isEmpty())
+                break
+            if (j == word.size - 1)
+                res.add(words.elementAt(i))
+        }
+    }
+    return res
 }
